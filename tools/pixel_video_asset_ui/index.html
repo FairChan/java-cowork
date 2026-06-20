@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pixel Asset Workbench</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <h1>Pixel Asset Workbench</h1>
+        <p>绿幕视频转透明像素 spritesheet</p>
+      </div>
+      <button class="ghost-button" id="openOutputButton" type="button" disabled>打开输出目录</button>
+    </header>
+
+    <section class="workspace">
+      <form class="panel controls" id="processForm">
+        <div class="mode-tabs" role="tablist" aria-label="输入模式">
+          <button class="tab is-active" type="button" data-mode="upload">上传视频</button>
+          <button class="tab" type="button" data-mode="path">本地路径</button>
+        </div>
+
+        <label class="field upload-field" data-panel="upload">
+          <span>MP4 文件</span>
+          <input id="videoFile" type="file" accept="video/mp4,video/*">
+        </label>
+
+        <label class="field hidden" data-panel="path">
+          <span>输入路径</span>
+          <input id="inputPath" type="text" spellcheck="false">
+        </label>
+
+        <label class="field">
+          <span>输出目录</span>
+          <input id="outDir" type="text" value="output/pixel_assets/reimu" spellcheck="false">
+        </label>
+
+        <div class="grid-two">
+          <label class="field">
+            <span>像素高度</span>
+            <input id="frameHeight" type="number" min="8" max="1024" value="96">
+          </label>
+          <label class="field">
+            <span>输出 FPS</span>
+            <input id="fps" type="number" min="1" max="240" value="12">
+          </label>
+          <label class="field">
+            <span>调色板颜色</span>
+            <input id="paletteColors" type="number" min="0" max="256" value="48">
+          </label>
+          <label class="field">
+            <span>预览倍数</span>
+            <input id="previewScale" type="number" min="1" max="16" value="4">
+          </label>
+          <label class="field">
+            <span>裁剪留白</span>
+            <input id="cropPadding" type="number" min="0" max="256" value="8">
+          </label>
+        </div>
+
+        <label class="check-row">
+          <input id="keepLargestComponent" type="checkbox" checked>
+          <span>只保留主体</span>
+        </label>
+
+        <details class="advanced">
+          <summary>绿幕阈值</summary>
+          <div class="grid-two">
+            <label class="field">
+              <span>Hue min</span>
+              <input id="hueMin" type="number" min="0" max="179" value="45">
+            </label>
+            <label class="field">
+              <span>Hue max</span>
+              <input id="hueMax" type="number" min="0" max="179" value="85">
+            </label>
+            <label class="field">
+              <span>Saturation min</span>
+              <input id="saturationMin" type="number" min="0" max="255" value="60">
+            </label>
+            <label class="field">
+              <span>Value min</span>
+              <input id="valueMin" type="number" min="0" max="255" value="80">
+            </label>
+          </div>
+        </details>
+
+        <button class="primary-button" id="processButton" type="submit">生成像素素材</button>
+      </form>
+
+      <section class="panel preview-panel">
+        <div class="preview-header">
+          <div>
+            <h2>预览</h2>
+            <p id="summaryText">等待生成</p>
+          </div>
+          <div class="status-pill" id="statusPill">Ready</div>
+        </div>
+
+        <div class="preview-frame">
+          <img id="previewImage" alt="像素素材预览">
+          <div class="empty-state" id="emptyState">Preview</div>
+        </div>
+
+        <dl class="metrics" id="metrics">
+          <div>
+            <dt>Frames</dt>
+            <dd>-</dd>
+          </div>
+          <div>
+            <dt>Size</dt>
+            <dd>-</dd>
+          </div>
+          <div>
+            <dt>FPS</dt>
+            <dd>-</dd>
+          </div>
+          <div>
+            <dt>Crop</dt>
+            <dd>-</dd>
+          </div>
+        </dl>
+
+        <div class="output-links">
+          <a id="sheetLink" href="#" target="_blank" rel="noreferrer" aria-disabled="true">sheet.png</a>
+          <a id="manifestLink" href="#" target="_blank" rel="noreferrer" aria-disabled="true">manifest.json</a>
+        </div>
+
+        <pre class="log" id="logOutput"></pre>
+      </section>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

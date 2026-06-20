@@ -64,6 +64,16 @@ public class ParticleSystem {
         }
     }
 
+
+    public void spawnSweepColumn(double x, double topY, double bottomY, Color color) {
+        for (int i = 0; i < 10; i++) {
+            double y = topY + random.nextDouble() * (bottomY - topY);
+            double vx = -80 + random.nextDouble() * 160;
+            double vy = -35 + random.nextDouble() * 70;
+            particles.add(new Particle(x + random.nextDouble() * 28 - 14, y, vx, vy,
+                    0.18 + random.nextDouble() * 0.22, 4 + random.nextDouble() * 8, color));
+        }
+    }
     public void clear() {
         particles.clear();
     }

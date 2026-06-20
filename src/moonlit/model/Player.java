@@ -9,7 +9,7 @@ import moonlit.render.AnimatedSpriteRenderer;
 import moonlit.render.SpriteAnimation;
 
 /**
- * Controllable shrine guardian with focused movement, shots, lives, and bombs.
+ * Controllable shrine guardian with focused movement, shots, lives, bombs, and spell-card animation.
  */
 public class Player extends Entity {
     private static final double FAST_SPEED = 300;
@@ -20,11 +20,14 @@ public class Player extends Entity {
     private int bombs = 3;
     private double shotCooldown;
     private double invulnerableSeconds = 1.2;
+    private double spellCardSeconds;
     private boolean focused;
     private final SpriteAnimation flightAnimation =
-            new SpriteAnimation("assets/sprites/player_flight.png", 64, 64, 4, 0.12);
+            new SpriteAnimation("assets/sprites/player_flight.png", 93, 96, 61, 1.0 / 24.0);
     private final SpriteAnimation focusAnimation =
             new SpriteAnimation("assets/sprites/player_focus.png", 64, 64, 4, 0.12);
+    private final SpriteAnimation cardAnimation =
+            new SpriteAnimation("assets/sprites/player_card.png", 98, 96, 61, 1.0 / 24.0);
 
     public Player(double x, double y) {
         super(x, y, 14, 1);
@@ -36,6 +39,8 @@ public class Player extends Entity {
         focused = input.isFocusHeld();
         flightAnimation.update(deltaSeconds);
         focusAnimation.update(deltaSeconds);
+        cardAnimation.update(deltaSeconds);
+        spellCardSeconds = Math.max(0, spellCardSeconds - deltaSeconds);
 
         double dx = (input.isMoveRight() ? 1 : 0) - (input.isMoveLeft() ? 1 : 0);
         double dy = (input.isMoveDown() ? 1 : 0) - (input.isMoveUp() ? 1 : 0);
@@ -64,9 +69,12 @@ public class Player extends Entity {
         double alpha = invulnerableSeconds > 0 && ((int) (invulnerableSeconds * 14) % 2 == 0) ? 0.42 : 1.0;
         graphics.setGlobalAlpha(alpha);
 
-        SpriteAnimation activeAnimation = focused ? focusAnimation : flightAnimation;
+        SpriteAnimation activeAnimation = isSpellCardActive()
+                ? cardAnimation
+                : focused ? focusAnimation : flightAnimation;
         if (activeAnimation.isAvailable()) {
-            AnimatedSpriteRenderer.drawCentered(graphics, activeAnimation, x, y, 1.0);
+            double scale = isSpellCardActive() ? 0.76 : (focused ? 1.0 : 0.72);
+            AnimatedSpriteRenderer.drawCentered(graphics, activeAnimation, x, y, scale);
             renderFocusMarker(graphics);
             graphics.setGlobalAlpha(1.0);
             return;
@@ -95,6 +103,14 @@ public class Player extends Entity {
         bombs--;
         invulnerableSeconds = Math.max(invulnerableSeconds, 1.35);
         return true;
+    }
+
+    public void startSpellCard(double durationSeconds) {
+        spellCardSeconds = Math.max(spellCardSeconds, durationSeconds);
+    }
+
+    public boolean isSpellCardActive() {
+        return spellCardSeconds > 0;
     }
 
     public void hit() {

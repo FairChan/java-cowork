@@ -75,6 +75,32 @@ The planned asset workflow is:
 3. Remove the green key locally and save transparent PNG spritesheets.
 4. Load the final PNGs in JavaFX through `AssetLoader`.
 
+Generated green-screen MP4 animations can be converted into crisp pixel assets
+with:
+
+```powershell
+python tools\pixel_video_asset.py `
+  --input C:\Users\ssema\Downloads\d61903a7-2dff-424e-a35b-c65f264cb521.mp4 `
+  --out-dir output\pixel_assets\reimu `
+  --frame-height 96 `
+  --fps 12 `
+  --palette-colors 48 `
+  --preview-scale 4
+```
+
+The tool writes a transparent `sheet.png`, per-frame transparent PNGs under
+`frames\`, a nearest-neighbor `preview.png`, and a `manifest.json` describing
+the exported frame size, frame count, crop, and processing parameters.
+
+For a browser-based control panel, run:
+
+```powershell
+python tools\pixel_video_asset_server.py
+```
+
+Then open `http://127.0.0.1:8765/`. The page supports either uploading an MP4
+from the browser or processing a local file path directly.
+
 During implementation, the configured API key returned `401 invalid_api_key`, so the checked-in assets were produced by `tools/create_fallback_assets.py`. The game code already consumes PNG spritesheets, so replacing these files with successful `gpt-image-2` outputs later does not require changing gameplay code.
 
 ## Presentation Notes

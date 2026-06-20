@@ -28,6 +28,9 @@ public final class LogicSmokeTest {
         testEnemyCanBeDestroyedByPlayerShot();
         testBossAppearsAfterStageIntroWaves();
         testRequiredAssetsExist();
+        testBombStartsCardAnimation();
+        testSpellSweepDestroysTouchedEnemies();
+        testSpellSweepDamagesBoss();
         System.out.println("LogicSmokeTest passed");
     }
 
@@ -118,14 +121,50 @@ public final class LogicSmokeTest {
         assert engine.getBoss() != null : "boss instance should exist after entrance";
     }
 
+
+    private static void testBombStartsCardAnimation() {
+        GameEngine engine = GameEngine.createForTests();
+        engine.startGame();
+
+        boolean used = engine.useBombForTests();
+
+        assert used : "spell card should be usable";
+        assert engine.getPlayer().isSpellCardActive() : "player should switch to card animation while spell is active";
+    }
+
+    private static void testSpellSweepDestroysTouchedEnemies() {
+        GameEngine engine = GameEngine.createForTestsWithStageScript();
+        engine.startGame();
+        Enemy enemy = Enemy.lantern(220, 180, 0, 0);
+        engine.addEnemy(enemy);
+
+        engine.useBombForTests();
+        engine.updateForTests(0.5);
+
+        assert engine.getEnemyCount() == 0 : "spell sweep should destroy touched stage enemies";
+    }
+
+    private static void testSpellSweepDamagesBoss() {
+        GameEngine engine = GameEngine.createForTests();
+        engine.startGame();
+        int hpBefore = engine.getBoss().getHp();
+
+        engine.useBombForTests();
+        engine.updateForTests(0.5);
+
+        assert engine.getBoss().getHp() < hpBefore : "spell sweep should damage boss when it crosses the beam";
+    }
     private static void testRequiredAssetsExist() {
         assert Files.exists(Path.of("assets/sprites/player_flight.png")) : "player flight spritesheet missing";
         assert Files.exists(Path.of("assets/sprites/player_focus.png")) : "player focus spritesheet missing";
+        assert Files.exists(Path.of("assets/sprites/player_card.png")) : "player spell card spritesheet missing";
         assert Files.exists(Path.of("assets/sprites/enemy_lantern.png")) : "lantern enemy spritesheet missing";
         assert Files.exists(Path.of("assets/sprites/enemy_charm_fairy.png")) : "charm fairy spritesheet missing";
         assert Files.exists(Path.of("assets/sprites/boss_moon_spirit.png")) : "boss spritesheet missing";
         assert Files.exists(Path.of("assets/backgrounds/stage1_moonlit_shrine.png")) : "stage background missing";
-        assert SpriteAnimation.isFrameCompatible(Path.of("assets/sprites/player_flight.png"), 4) : "player frames invalid";
+        assert SpriteAnimation.isFrameCompatible(Path.of("assets/sprites/player_flight.png"), 61) : "player frames invalid";
+        assert SpriteAnimation.isFrameCompatible(Path.of("assets/sprites/player_card.png"), 61) : "player spell card frames invalid";
         assert SpriteAnimation.isFrameCompatible(Path.of("assets/sprites/boss_moon_spirit.png"), 6) : "boss frames invalid";
     }
 }
+
