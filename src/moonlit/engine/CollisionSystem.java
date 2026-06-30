@@ -27,6 +27,7 @@ public class CollisionSystem {
                     engine.getParticles().spawnSpark(shot.getX(), shot.getY(), Color.web("#9df7ff"));
                     if (!enemy.isAlive()) {
                         engine.addScore(enemy.getScoreValue());
+                        engine.dropEnemyRewards(enemy);
                         engine.getParticles().spawnBurst(enemy.getX(), enemy.getY(), Color.web("#ffd175"), 18);
                     }
                     break;
@@ -50,9 +51,10 @@ public class CollisionSystem {
             double dy = bullet.getY() - player.getY();
             double distanceSquared = dx * dx + dy * dy;
             double hitDistance = bullet.getRadius() + player.getHitRadius();
-            if (distanceSquared <= hitDistance * hitDistance && player.canBeHit()) {
+            if (distanceSquared <= hitDistance * hitDistance && player.canBeHit() && !engine.isInvincibleMode()) {
                 bullet.destroy();
                 player.hit();
+                engine.notifyPlayerDamaged();
                 engine.getParticles().spawnBurst(player.getX(), player.getY(), Color.web("#ff709c"), 32);
                 continue;
             }
@@ -73,3 +75,4 @@ public class CollisionSystem {
         return dx * dx + dy * dy <= range * range;
     }
 }
+

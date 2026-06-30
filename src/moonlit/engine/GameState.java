@@ -6,6 +6,7 @@ package moonlit.engine;
 public enum GameState {
     MENU,
     PLAYING,
+    DIALOGUE,
     PAUSED,
     WON,
     LOST

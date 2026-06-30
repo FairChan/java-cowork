@@ -64,16 +64,24 @@ public class ParticleSystem {
         }
     }
 
-
     public void spawnSweepColumn(double x, double topY, double bottomY, Color color) {
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 12; i++) {
             double y = topY + random.nextDouble() * (bottomY - topY);
-            double vx = -80 + random.nextDouble() * 160;
-            double vy = -35 + random.nextDouble() * 70;
-            particles.add(new Particle(x + random.nextDouble() * 28 - 14, y, vx, vy,
-                    0.18 + random.nextDouble() * 0.22, 4 + random.nextDouble() * 8, color));
+            double vx = -110 + random.nextDouble() * 220;
+            double vy = -50 + random.nextDouble() * 100;
+            Color particleColor = i % 4 == 0 ? Color.WHITE : color;
+            particles.add(new Particle(x + random.nextDouble() * 42 - 21, y, vx, vy,
+                    0.18 + random.nextDouble() * 0.24, 3 + random.nextDouble() * 7, particleColor));
+        }
+        for (int i = 0; i < 4; i++) {
+            double y = topY + random.nextDouble() * (bottomY - topY);
+            double vx = random.nextBoolean() ? 150 + random.nextDouble() * 120 : -150 - random.nextDouble() * 120;
+            double vy = -25 + random.nextDouble() * 50;
+            particles.add(new Particle(x, y, vx, vy,
+                    0.12 + random.nextDouble() * 0.18, 10 + random.nextDouble() * 10, Color.web("#8ee7ff")));
         }
     }
+
     public void clear() {
         particles.clear();
     }

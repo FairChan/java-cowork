@@ -39,6 +39,7 @@ function collectPayload() {
     outDir: refs.outDir.value.trim(),
     frameHeight: $("#frameHeight").value,
     fps: $("#fps").value,
+    forwardFrames: $("#forwardFrames").value,
     paletteColors: $("#paletteColors").value,
     previewScale: $("#previewScale").value,
     cropPadding: $("#cropPadding").value,

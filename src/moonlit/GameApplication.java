@@ -2,6 +2,7 @@ package moonlit;
 
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -13,7 +14,7 @@ import moonlit.engine.GameEngine;
 import moonlit.engine.InputController;
 
 /**
- * JavaFX entry point for Moonlit Shrine Danmaku.
+ * JavaFX entry point for Starry Illusion.
  */
 public class GameApplication extends Application {
     @Override
@@ -29,7 +30,7 @@ public class GameApplication extends Application {
         Scene scene = new Scene(root, GameConfig.WINDOW_WIDTH, GameConfig.WINDOW_HEIGHT, Color.BLACK);
         input.attach(scene);
 
-        stage.setTitle("Moonlit Shrine Danmaku");
+        stage.setTitle("Starry Illusion - JavaFX Danmaku");
         stage.setResizable(false);
         stage.setScene(scene);
         stage.show();
@@ -48,6 +49,10 @@ public class GameApplication extends Application {
                 double deltaSeconds = Math.min(0.033, (now - previousFrame) / 1_000_000_000.0);
                 previousFrame = now;
                 engine.update(deltaSeconds);
+                if (engine.consumeExitRequested()) {
+                    Platform.exit();
+                    return;
+                }
                 engine.render(graphics);
                 input.endFrame();
             }

@@ -1,16 +1,24 @@
 package moonlit;
 
+import moonlit.audio.AudioManager;
+import moonlit.engine.GameConfig;
 import moonlit.engine.GameEngine;
 import moonlit.engine.GameState;
+import moonlit.engine.InputController;
 import moonlit.model.Boss;
 import moonlit.model.Enemy;
 import moonlit.model.EnemyBullet;
 import moonlit.model.Player;
 import moonlit.model.PlayerShot;
 import moonlit.render.SpriteAnimation;
+import moonlit.render.TitleScreenRenderer;
+import moonlit.stage.StageDirector;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
+import javafx.scene.input.KeyCode;
 
 /**
  * Minimal logic checks for the demo. Run with Java assertions enabled.
@@ -19,21 +27,413 @@ public final class LogicSmokeTest {
     private LogicSmokeTest() {
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        testCoworkUiUsesWideWindowLayout();
+        testTitleScreenAssetsExist();
+        testTitleScreenMenuNavigationAndActions();
+        testTitleScreenLeftPortraitIsDisabled();
+        testPortraitMoodChangesForDamageAndRewards();
+        testAudioManagerIgnoresMissingFiles();
+        testStarryBackgroundAndAudioAssetsExist();
+        testDialoguePortraitAssetsExist();
+        testCoworkBossPortraitAssetsExist();
+        testStarryBackgroundWaveTransitions();
+        testBossSwitchesToBossMusicState();
+        testMiniBossOneDialoguePausesStageUntilAdvanced();
+        testMiniBossTwoDialoguePausesStageUntilAdvanced();
+        testFinalBossDialogueBlocksBossSpawnUntilAdvanced();
+        testBossDefeatStartsPostBattleDialogueBeforeWin();
+        testStarryIllusionIsDefaultStage();
+        testStarryIllusionTimelineMilestones();
+        testOpeningFairyProbeHoverSlotsDoNotOverlap();
+        testOpeningWaveBulletProfilesHaveVariety();
+        testBossHasSixFormalPhases();
+        testMasterSparkLaserPushesPlayer();
+        testBossDefeatConvertsBulletsToGreenItems();
         testCollisionRemovesLifeAndBullet();
+        testInvincibleModePreventsBulletDamage();
+        testInvincibleModePreventsLaserDamage();
         testBombClearsEnemyBulletsAndCostsBomb();
         testBossDefeatSetsWinState();
         testBossPhaseChangesAfterDamage();
         testStageOneSpawnsEnemiesBeforeBoss();
         testEnemyCanBeDestroyedByPlayerShot();
         testBossAppearsAfterStageIntroWaves();
+        testStageTwoCanBeStartedForTests();
+        testStageTwoSpawnsEnemiesBeforeBoss();
+        testStageTwoBossAppearsAfterTimeline();
+        testXOddAimedPatternSpawnsThirtySixAdditiveAcceleratingBullets();
+        testXOddAimedCenterAngleTracksPlayer();
+        testXOddAimedPatternUsesFrameWaits();
+        testAcceleratingBulletSlowsWithoutReversing();
+        testDefaultEnemyBulletIsNotAdditive();
+        testBombClearsStageTwoGlowBullets();
         testRequiredAssetsExist();
+        testItemIconAssetsExistAndMapToTypes();
+        testResourceFragmentsExposeHudCounts();
+        testMonsterSpritesheetsExist();
+        testEnemiesUseRandomMonsterVisuals();
+        testBothStagesSpawnMonsterVisualEnemies();
         testBombStartsCardAnimation();
         testSpellSweepDestroysTouchedEnemies();
+        testSpellSweepDoesNotSkipEnemiesBetweenFrames();
         testSpellSweepDamagesBoss();
         System.out.println("LogicSmokeTest passed");
     }
 
+
+    private static void testAudioManagerIgnoresMissingFiles() {
+        AudioManager audio = new AudioManager();
+        audio.playStageTheme();
+        audio.playBossTheme();
+        audio.stop();
+    }
+
+    private static void testCoworkUiUsesWideWindowLayout() {
+        assert GameConfig.WINDOW_WIDTH == 1176 : "cowork UI should use the 1176px wide dual-HUD layout";
+        assert GameConfig.LEFT_HUD_WIDTH == 230 : "left player HUD should reserve its cowork panel width";
+        assert GameConfig.PLAYFIELD_X > GameConfig.LEFT_HUD_X + GameConfig.LEFT_HUD_WIDTH
+                : "playfield should sit between left and right HUD panels";
+        assert GameConfig.HUD_X > GameConfig.PLAYFIELD_RIGHT : "right HUD should sit after the playfield";
+    }
+
+    private static void testTitleScreenAssetsExist() throws Exception {
+        String[] paths = {
+                "assets/title/shrine_gate_background.png",
+                "assets/title/reimu.png",
+                "assets/title/marisa.png",
+                "assets/title/poses/reimu_peace.png",
+                "assets/title/poses/reimu_talisman.png",
+                "assets/title/poses/marisa_hat.png",
+                "assets/title/poses/marisa_broom.png",
+                "assets/portraits/reimu_normal.png",
+                "assets/portraits/reimu_hurt.png",
+                "assets/portraits/reimu_cheer.png"
+        };
+        for (String value : paths) {
+            Path path = Path.of(value);
+            assert Files.exists(path) : "cowork UI asset missing: " + path;
+            try (java.io.InputStream stream = Files.newInputStream(path)) {
+                java.awt.image.BufferedImage image = javax.imageio.ImageIO.read(stream);
+                assert image != null : "cowork UI asset should be readable: " + path;
+            }
+        }
+    }
+
+    private static void testTitleScreenMenuNavigationAndActions() {
+        InputController input = new InputController();
+        GameEngine engine = new GameEngine(input);
+        assert engine.getState() == GameState.MENU : "game should boot to the title menu";
+        assert engine.getTitleSelectedMenuIndexForTests() == 0 : "START should be selected by default";
+
+        input.pressForTests(KeyCode.DOWN);
+        engine.update(1.0 / 60.0);
+        input.endFrame();
+        assert engine.getTitleSelectedMenuIndexForTests() == 1 : "Down should select PRACTICE";
+
+        input.pressForTests(KeyCode.ENTER);
+        engine.update(1.0 / 60.0);
+        input.endFrame();
+        assert engine.getState() == GameState.MENU : "unimplemented menu items should not start the stage";
+        assert engine.getTitleLastActionForTests() == TitleScreenRenderer.MenuAction.COMING_SOON
+                : "non-START title entries should show a coming-soon action";
+
+        input.pressForTests(KeyCode.UP);
+        engine.update(1.0 / 60.0);
+        input.endFrame();
+        assert engine.getTitleSelectedMenuIndexForTests() == 0 : "Up should return to START";
+
+        input.pressForTests(KeyCode.ENTER);
+        engine.update(1.0 / 60.0);
+        input.endFrame();
+        assert engine.getState() == GameState.MENU : "START should play a transition before gameplay starts";
+        assert engine.isTitleStartTransitionActiveForTests() : "START should begin the shrine gate transition";
+        engine.update(2.6);
+        assert engine.getState() == GameState.PLAYING : "title transition should hand off to Starry Illusion";
+
+        InputController exitInput = new InputController();
+        GameEngine exitEngine = new GameEngine(exitInput);
+        exitInput.pressForTests(KeyCode.ESCAPE);
+        exitEngine.update(1.0 / 60.0);
+        exitInput.endFrame();
+        assert exitEngine.getTitleSelectedMenuIndexForTests() == 6 : "Escape should select EXIT";
+        exitInput.pressForTests(KeyCode.ENTER);
+        exitEngine.update(1.0 / 60.0);
+        assert exitEngine.isExitRequestedForTests() : "EXIT should request application shutdown";
+    }
+
+    private static void testTitleScreenLeftPortraitIsDisabled() {
+        TitleScreenRenderer renderer = new TitleScreenRenderer();
+        assert !renderer.isLeftPortraitEnabledForTests() : "title screen should not render the left portrait";
+    }
+
+    private static void testPortraitMoodChangesForDamageAndRewards() {
+        GameEngine engine = GameEngine.createForTests();
+        engine.startGame();
+        assert engine.getPortraitMood() == GameEngine.PortraitMood.NORMAL : "portrait should start normal";
+
+        engine.notifyPlayerDamaged();
+        assert engine.getPortraitMood() == GameEngine.PortraitMood.HURT : "damage should switch portrait to hurt";
+        engine.update(0.8);
+        assert engine.getPortraitMood() == GameEngine.PortraitMood.NORMAL : "hurt portrait should time out";
+
+        engine.collectItem(new moonlit.model.ItemDrop(moonlit.model.ItemDrop.Type.SMALL_POWER, 120, 120));
+        assert engine.getPortraitMood() == GameEngine.PortraitMood.CHEER : "power reward should switch portrait to cheer";
+    }
+
+    private static void testStarryBackgroundAndAudioAssetsExist() throws Exception {
+        for (int i = 1; i <= 4; i++) {
+            Path path = Path.of("assets/backgrounds/starry_wave" + i + ".png");
+            assert Files.exists(path) : "starry wave background missing: " + path;
+            try (java.io.InputStream stream = Files.newInputStream(path)) {
+                java.awt.image.BufferedImage image = javax.imageio.ImageIO.read(stream);
+                assert image != null : "background should be readable: " + path;
+                assert image.getWidth() >= 620 : "background should be at least playfield width";
+                assert image.getHeight() >= 652 : "background should be at least playfield height";
+            }
+        }
+        assert Files.exists(Path.of("assets/audio/stage_starry_illusion.mp3")) : "stage BGM missing";
+        assert Files.exists(Path.of("assets/audio/boss_master_spark.mp3")) : "boss BGM missing";
+    }
+
+    private static void testDialoguePortraitAssetsExist() throws Exception {
+        assert Files.exists(Path.of("assets/portraits/reimu.png")) : "Reimu dialogue portrait missing";
+        assert Files.exists(Path.of("assets/portraits/marisa.png")) : "Marisa dialogue portrait missing";
+    }
+
+    private static void testCoworkBossPortraitAssetsExist() throws Exception {
+        String[] paths = {
+                "assets/bosses/boss_kitsune.png",
+                "assets/bosses/boss_lantern_fairy.png",
+                "assets/bosses/boss_star_oracle.png"
+        };
+        for (String value : paths) {
+            Path path = Path.of(value);
+            assert Files.exists(path) : "cowork boss portrait missing: " + path;
+            try (java.io.InputStream stream = Files.newInputStream(path)) {
+                java.awt.image.BufferedImage image = javax.imageio.ImageIO.read(stream);
+                assert image != null : "cowork boss portrait should be readable: " + path;
+            }
+        }
+    }
+
+    private static void testStarryBackgroundWaveTransitions() {
+        GameEngine engine = GameEngine.createForTestsWithStageScript();
+        engine.startGame();
+        assert engine.getBackgroundWaveIndexForTests() == 1 : "stage should begin on wave 1 background";
+
+        engine.updateForTests(25.0);
+        assert engine.getBackgroundWaveIndexForTests() == 2 : "0:25 should switch to wave 2 background";
+        assert engine.isBackgroundCloudTransitionActiveForTests() : "wave switch should start cloud transition";
+
+        engine.updateForTests(25.0);
+        assert engine.getBackgroundWaveIndexForTests() == 3 : "0:50 should switch to wave 3 background";
+        assert engine.isBackgroundCloudTransitionActiveForTests() : "second wave switch should start cloud transition";
+
+        finishDialogue(engine);
+        defeatActiveBoss(engine);
+        finishDialogue(engine);
+        clearMiniBossTwo(engine);
+        advanceStageTo(engine, 115.0);
+        assert engine.getBackgroundWaveIndexForTests() == 4 : "1:55 should switch to wave 4 background";
+        assert engine.isBackgroundCloudTransitionActiveForTests() : "third wave switch should start cloud transition";
+    }
+
+    private static void testBossSwitchesToBossMusicState() {
+        GameEngine engine = GameEngine.createForTestsWithStageScript();
+        engine.startGame();
+        assert "stage".equals(engine.getCurrentMusicCueForTests()) : "stage BGM should be requested on start";
+        advanceStageTo(engine, StageDirector.MINI_BOSS_ONE_TIME);
+        assert engine.getState() == GameState.DIALOGUE : "small boss dialogue should start before boss BGM";
+        advanceDialogueUntilMusicCue(engine, "boss");
+        assert "boss".equals(engine.getCurrentMusicCueForTests()) : "boss BGM should be requested during boss dialogue";
+    }
+
+    private static void testMiniBossOneDialoguePausesStageUntilAdvanced() {
+        GameEngine engine = GameEngine.createForTestsWithStageScript();
+        engine.startGame();
+
+        advanceStageTo(engine, StageDirector.MINI_BOSS_ONE_TIME);
+
+        assert engine.getState() == GameState.DIALOGUE : "first small boss encounter should enter dialogue state";
+        assert "mini_boss_one_intro".equals(engine.getDialogueSceneIdForTests()) : "first small boss intro id should be exposed";
+        assert !engine.isBossActive() : "first small boss should wait until dialogue finishes";
+
+        finishDialogue(engine);
+
+        assert engine.getState() == GameState.PLAYING : "gameplay should resume after first small boss dialogue";
+        assert engine.isBossActive() : "first small boss should begin after dialogue finishes";
+        assert engine.getBoss().getEncounter() == Boss.Encounter.MINI_BOSS_ONE : "first small boss encounter should be active";
+    }
+
+    private static void testMiniBossTwoDialoguePausesStageUntilAdvanced() {
+        GameEngine engine = GameEngine.createForTestsWithStageScript();
+        engine.startGame();
+
+        clearMiniBossOne(engine);
+        advanceStageTo(engine, StageDirector.MINI_BOSS_TWO_TIME);
+
+        assert engine.getState() == GameState.DIALOGUE : "second small boss encounter should enter dialogue state";
+        assert "mini_boss_two_intro".equals(engine.getDialogueSceneIdForTests()) : "second small boss intro id should be exposed";
+        assert !engine.isBossActive() : "second small boss should wait until dialogue finishes";
+
+        finishDialogue(engine);
+
+        assert engine.getState() == GameState.PLAYING : "gameplay should resume after second small boss dialogue";
+        assert engine.isBossActive() : "second small boss should begin after dialogue finishes";
+        assert engine.getBoss().getEncounter() == Boss.Encounter.MINI_BOSS_TWO : "second small boss encounter should be active";
+    }
+
+    private static void testFinalBossDialogueBlocksBossSpawnUntilAdvanced() {
+        GameEngine engine = GameEngine.createForTestsWithStageScript();
+        engine.startGame();
+
+        reachFinalBossIntro(engine);
+
+        assert engine.getState() == GameState.DIALOGUE : "final boss dialogue should begin at boss time";
+        assert "final_boss_intro".equals(engine.getDialogueSceneIdForTests()) : "final boss dialogue scene id should be exposed";
+        assert !engine.isBossActive() : "final boss should not spawn before dialogue finishes";
+
+        finishDialogue(engine);
+
+        assert engine.getState() == GameState.PLAYING : "gameplay should resume after final boss dialogue";
+        assert engine.isBossActive() : "final boss should spawn after dialogue finishes";
+        assert engine.getBoss().getEncounter() == Boss.Encounter.FINAL_BOSS : "final boss should use final encounter";
+    }
+
+    private static void testBossDefeatStartsPostBattleDialogueBeforeWin() {
+        GameEngine engine = GameEngine.createForTestsWithStageScript();
+        engine.startGame();
+        reachFinalBossIntro(engine);
+        finishDialogue(engine);
+
+        engine.getBoss().skipToFinalPhaseForTests(engine);
+        engine.getBoss().takeDamage(engine.getBoss().getHp());
+        engine.updateForTests(1.0 / 60.0);
+
+        assert engine.getState() == GameState.DIALOGUE : "boss defeat should show post-battle dialogue before clear state";
+        assert "final_boss_defeated".equals(engine.getDialogueSceneIdForTests()) : "final defeat dialogue scene id should be exposed";
+
+        finishDialogue(engine);
+
+        assert engine.getState() == GameState.WON : "stage should clear after post-battle dialogue finishes";
+    }
+    private static void testStarryIllusionIsDefaultStage() {
+        GameEngine engine = GameEngine.createForTestsWithStageScript();
+        engine.startGame();
+
+        assert engine.getCurrentStageNumber() == 1 : "Starry Illusion should replace the default stage slot";
+        assert "Starry Illusion".equals(engine.getCurrentStageName()) : "default stage should be Starry Illusion";
+        assert Math.abs(engine.getCurrentStageBossEntranceTime() - StageDirector.FINAL_BOSS_TIME) < 0.001
+                : "final boss should enter on the cowork three-boss route timeline";
+    }
+
+    private static void testStarryIllusionTimelineMilestones() {
+        GameEngine engine = GameEngine.createForTestsWithStageScript();
+        engine.startGame();
+
+        engine.updateForTests(1.0 / 60.0);
+        assert engine.getStageDirectorEventCount("fairy_probe") > 0 : "opening fairy probe should start immediately";
+
+        engine.updateForTests(25.0);
+        assert engine.getStageDirectorEventCount("kedama_lock") > 0 : "kedama lockdown should start at 0:25";
+
+        engine.updateForTests(25.0);
+        assert engine.getStageDirectorEventCount("greater_fairy") > 0 : "greater fairy pressure should start at 0:50";
+
+        advanceStageTo(engine, StageDirector.MINI_BOSS_ONE_TIME);
+        assert engine.getState() == GameState.DIALOGUE : "first small boss should speak before battle";
+        finishDialogue(engine);
+        assert engine.getBoss().getEncounter() == Boss.Encounter.MINI_BOSS_ONE : "first small boss should enter after dialogue";
+        defeatActiveBoss(engine);
+        finishDialogue(engine);
+
+        advanceStageTo(engine, StageDirector.MINI_BOSS_TWO_TIME);
+        assert engine.getState() == GameState.DIALOGUE : "second small boss should speak before battle";
+        finishDialogue(engine);
+        assert engine.getBoss().getEncounter() == Boss.Encounter.MINI_BOSS_TWO : "second small boss should enter after dialogue";
+        defeatActiveBoss(engine);
+        finishDialogue(engine);
+
+        advanceStageTo(engine, 96.0);
+        assert engine.getStageDirectorEventCount("sunflower_rage") > 0 : "sunflower laser wave should start after midboss";
+
+        advanceStageTo(engine, StageDirector.FINAL_BOSS_TIME);
+        assert engine.getState() == GameState.DIALOGUE : "final boss should speak before formal battle";
+        finishDialogue(engine);
+        assert engine.getBoss().getEncounter() == Boss.Encounter.FINAL_BOSS : "final boss should enter around the cowork final-boss time";
+    }
+
+    private static void testOpeningFairyProbeHoverSlotsDoNotOverlap() {
+        GameEngine engine = GameEngine.createForTestsWithStageScript();
+        engine.startGame();
+
+        engine.updateForTests(1.6);
+
+        assert engine.getEnemyCount() == 6 : "opening fairy probe should spawn six enemies";
+        for (int i = 0; i < engine.getEnemies().size(); i++) {
+            Enemy first = engine.getEnemies().get(i);
+            for (int j = i + 1; j < engine.getEnemies().size(); j++) {
+                Enemy second = engine.getEnemies().get(j);
+                double distance = Math.hypot(first.getX() - second.getX(), first.getY() - second.getY());
+                assert distance >= 44.0 : "opening fairies should not overlap while hovering";
+            }
+        }
+    }
+
+    private static void testOpeningWaveBulletProfilesHaveVariety() {
+        GameEngine engine = GameEngine.createForTestsWithStageScript();
+        engine.startGame();
+
+        engine.updateForTests(1.05);
+
+        Set<Integer> variants = new HashSet<>();
+        Set<Integer> speeds = new HashSet<>();
+        for (EnemyBullet bullet : engine.getEnemyBullets()) {
+            variants.add(bullet.getVariantForTests());
+            speeds.add((int) Math.round(bullet.getSpeed()));
+        }
+        assert variants.size() >= 4 : "same-wave bullets should use varied colors";
+        assert speeds.size() >= 2 : "same-wave bullets should use varied speeds";
+    }
+    private static void testBossHasSixFormalPhases() {
+        GameEngine engine = GameEngine.createForTests();
+        engine.startGame();
+        Boss boss = engine.getBoss();
+
+        assert boss.getPhaseCount() == 6 : "formal boss should have 3 nonspells and 3 spell cards";
+        assert boss.getEncounter() == Boss.Encounter.FINAL_BOSS : "default formal boss should use final encounter";
+        assert "Nonspell 1: High-Mobility Stardust".equals(boss.getPhaseName()) : "first phase name should describe nonspell 1";
+        boss.skipCurrentPhaseForTests(engine);
+        assert "Spell 1: Stardust Reverie".equals(boss.getPhaseName()) : "second phase should be Stardust Reverie";
+    }
+
+    private static void testMasterSparkLaserPushesPlayer() {
+        GameEngine engine = GameEngine.createForTests();
+        engine.startGame();
+        engine.getBoss().skipToFinalPhaseForTests(engine);
+        double before = engine.getPlayer().getX();
+
+        engine.updateForTests(1.2);
+
+        assert engine.getActiveLaserCount() > 0 : "Final Master Spark should create an active laser";
+        assert engine.getPlayer().getX() != before : "Master Spark should push the player horizontally";
+    }
+
+    private static void testBossDefeatConvertsBulletsToGreenItems() {
+        GameEngine engine = GameEngine.createForTests();
+        engine.startGame();
+        engine.addEnemyBullet(new EnemyBullet(200, 200, 0, 0, 6, 1));
+        engine.addEnemyBullet(new EnemyBullet(240, 240, 0, 0, 6, 2));
+
+        engine.getBoss().skipToFinalPhaseForTests(engine);
+        engine.getBoss().takeDamage(engine.getBoss().getHp());
+        engine.updateForTests(1.0 / 60.0);
+
+        assert engine.getState() == GameState.WON : "defeating formal boss should clear the stage";
+        assert engine.getEnemyBulletCount() == 0 : "boss defeat should clear hostile bullets";
+        assert engine.getItemCountByType("GREEN") >= 2 : "cleared bullets should become green items";
+    }
     private static void testCollisionRemovesLifeAndBullet() {
         GameEngine engine = GameEngine.createForTests();
         engine.startGame();
@@ -48,6 +448,36 @@ public final class LogicSmokeTest {
         assert engine.getEnemyBulletCount() == 0 : "colliding bullet should be removed";
     }
 
+    private static void testInvincibleModePreventsBulletDamage() {
+        GameEngine engine = GameEngine.createForTests();
+        engine.startGame();
+        Player player = engine.getPlayer();
+        player.setInvulnerableSeconds(0);
+        engine.setInvincibleMode(true);
+        int livesBefore = player.getLives();
+
+        engine.addEnemyBullet(new EnemyBullet(player.getX(), player.getY(), 0, 0, 7, 0));
+        engine.updateForTests(1.0 / 60.0);
+
+        assert engine.isInvincibleMode() : "invincible mode should stay enabled";
+        assert player.getLives() == livesBefore : "invincible mode should prevent bullet life loss";
+        assert engine.getEnemyBulletCount() == 1 : "invincible mode should not consume the bullet as a hit";
+    }
+
+    private static void testInvincibleModePreventsLaserDamage() {
+        GameEngine engine = GameEngine.createForTests();
+        engine.startGame();
+        Player player = engine.getPlayer();
+        player.setInvulnerableSeconds(0);
+        engine.setInvincibleMode(true);
+        int livesBefore = player.getLives();
+
+        engine.addLaser(new moonlit.model.Laser(player.getX(), player.getY() - 40, Math.PI / 2.0,
+                160, 40, 0.0, 0.5, 0, javafx.scene.paint.Color.web("#fff6a8")));
+        engine.updateForTests(1.0 / 60.0);
+
+        assert player.getLives() == livesBefore : "invincible mode should prevent laser life loss";
+    }
     private static void testBombClearsEnemyBulletsAndCostsBomb() {
         GameEngine engine = GameEngine.createForTests();
         engine.startGame();
@@ -69,6 +499,7 @@ public final class LogicSmokeTest {
         engine.startGame();
         Boss boss = engine.getBoss();
 
+        boss.skipToFinalPhaseForTests(engine);
         boss.takeDamage(boss.getHp());
         engine.updateForTests(1.0 / 60.0);
 
@@ -81,7 +512,7 @@ public final class LogicSmokeTest {
         Boss boss = engine.getBoss();
 
         int firstPhase = boss.getPhaseIndex();
-        boss.takeDamage(460);
+        boss.takeDamage(boss.getHp());
         boss.update(1.0 / 60.0, engine);
 
         assert boss.getPhaseIndex() > firstPhase : "boss should advance to a harder phase";
@@ -98,7 +529,7 @@ public final class LogicSmokeTest {
     }
 
     private static void testEnemyCanBeDestroyedByPlayerShot() {
-        GameEngine engine = GameEngine.createForTestsWithStageScript();
+        GameEngine engine = GameEngine.createForTests();
         engine.startGame();
         Enemy enemy = Enemy.lantern(220, 180, 0, 0);
         engine.addEnemy(enemy);
@@ -115,12 +546,118 @@ public final class LogicSmokeTest {
         GameEngine engine = GameEngine.createForTestsWithStageScript();
         engine.startGame();
 
-        engine.updateForTests(66.0);
+        reachFinalBossIntro(engine);
+        assert !engine.isBossActive() : "boss should wait until final dialogue finishes";
+        finishDialogue(engine);
 
         assert engine.isBossActive() : "boss should enter after the stage wave timeline";
         assert engine.getBoss() != null : "boss instance should exist after entrance";
+        assert engine.getBoss().getEncounter() == Boss.Encounter.FINAL_BOSS : "route boss should be the final encounter";
     }
 
+    private static void testStageTwoCanBeStartedForTests() {
+        GameEngine engine = GameEngine.createForTestsWithStageScript();
+
+        engine.startStageTwoForTests();
+
+        assert engine.getCurrentStageNumber() == 2 : "stage two should be selected";
+        assert "Starcrossed Moon Gate".equals(engine.getCurrentStageName()) : "stage two name should be exposed";
+        assert engine.getState() == GameState.PLAYING : "stage two should enter play state";
+    }
+
+    private static void testStageTwoSpawnsEnemiesBeforeBoss() {
+        GameEngine engine = GameEngine.createForTestsWithStageScript();
+        engine.startStageTwoForTests();
+
+        engine.updateForTests(7.0);
+
+        assert engine.getEnemyCount() > 0 : "stage two should spawn cross-lane enemies";
+        assert !engine.isBossActive() : "stage two boss should wait for the timeline";
+    }
+
+    private static void testStageTwoBossAppearsAfterTimeline() {
+        GameEngine engine = GameEngine.createForTestsWithStageScript();
+        engine.startStageTwoForTests();
+
+        engine.updateForTests(71.0);
+
+        assert engine.isBossActive() : "stage two boss should enter after about 70 seconds";
+        assert engine.getBoss() != null : "stage two boss should exist";
+    }
+
+    private static void testXOddAimedPatternSpawnsThirtySixAdditiveAcceleratingBullets() {
+        GameEngine engine = GameEngine.createForTests();
+        engine.startGame();
+        engine.enableStageTwoBossPatternForTests();
+
+        engine.getBoss().update(1.0 / 60.0, engine);
+
+        assert engine.getEnemyBulletCount() == 36 : "one X odd-aimed burst should create 36 bullets";
+        for (EnemyBullet bullet : engine.getEnemyBullets()) {
+            assert bullet.isAdditive() : "X odd-aimed bullets should use additive blending";
+            assert bullet.getAccelerationPerSecond() < 0 : "X odd-aimed bullets should decelerate";
+        }
+    }
+
+    private static void testXOddAimedCenterAngleTracksPlayer() {
+        GameEngine engine = GameEngine.createForTests();
+        engine.startGame();
+        engine.enableStageTwoBossPatternForTests();
+
+        engine.getBoss().update(1.0 / 60.0, engine);
+
+        EnemyBullet centerBullet = engine.getEnemyBullets().get(4);
+        double expected = Math.atan2(engine.getPlayer().getY() - engine.getBoss().getY(),
+                engine.getPlayer().getX() - engine.getBoss().getX()) - Math.PI / 4.0;
+        double actual = Math.atan2(centerBullet.getVelocityY(), centerBullet.getVelocityX());
+        assert Math.abs(normalizeAngle(actual - expected)) < 0.0001 : "center bullet should track the aimed X arm";
+    }
+
+    private static void testXOddAimedPatternUsesFrameWaits() {
+        GameEngine engine = GameEngine.createForTests();
+        engine.startGame();
+        engine.enableStageTwoBossPatternForTests();
+
+        engine.getBoss().update(1.0 / 60.0, engine);
+        for (int i = 0; i < 11; i++) {
+            engine.getBoss().update(1.0 / 60.0, engine);
+        }
+        assert engine.getEnemyBulletCount() == 36 : "second burst should wait for frame timing";
+
+        engine.getBoss().update(1.0 / 60.0, engine);
+
+        assert engine.getEnemyBulletCount() == 72 : "second burst should fire after 12 frame ticks";
+    }
+
+    private static void testAcceleratingBulletSlowsWithoutReversing() {
+        GameEngine engine = GameEngine.createForTests();
+        engine.startGame();
+        EnemyBullet bullet = EnemyBullet.acceleratingGlow(200, 200, 160, 0, 6, 8, -180, 70);
+        double before = bullet.getSpeed();
+
+        bullet.update(1.0, engine);
+
+        assert bullet.getSpeed() < before : "negative acceleration should slow the bullet";
+        assert bullet.getSpeed() >= 70 : "bullet should not slow below its minimum speed";
+        assert bullet.getVelocityX() > 0 : "bullet should not reverse direction";
+    }
+
+    private static void testDefaultEnemyBulletIsNotAdditive() {
+        EnemyBullet bullet = new EnemyBullet(100, 100, 60, 0, 5, 1);
+
+        assert !bullet.isAdditive() : "legacy enemy bullets should not use additive blending by default";
+        assert bullet.getAccelerationPerSecond() == 0 : "legacy enemy bullets should not accelerate by default";
+    }
+
+    private static void testBombClearsStageTwoGlowBullets() {
+        GameEngine engine = GameEngine.createForTests();
+        engine.startGame();
+        engine.addEnemyBullet(EnemyBullet.acceleratingGlow(200, 200, 160, 0, 6, 8, -100, 70));
+
+        engine.useBombForTests();
+
+        assert engine.getEnemyBulletCount() == 0 : "bomb should clear Stage 2 glow bullets";
+    }
 
     private static void testBombStartsCardAnimation() {
         GameEngine engine = GameEngine.createForTests();
@@ -133,7 +670,7 @@ public final class LogicSmokeTest {
     }
 
     private static void testSpellSweepDestroysTouchedEnemies() {
-        GameEngine engine = GameEngine.createForTestsWithStageScript();
+        GameEngine engine = GameEngine.createForTests();
         engine.startGame();
         Enemy enemy = Enemy.lantern(220, 180, 0, 0);
         engine.addEnemy(enemy);
@@ -142,6 +679,18 @@ public final class LogicSmokeTest {
         engine.updateForTests(0.5);
 
         assert engine.getEnemyCount() == 0 : "spell sweep should destroy touched stage enemies";
+    }
+
+    private static void testSpellSweepDoesNotSkipEnemiesBetweenFrames() {
+        GameEngine engine = GameEngine.createForTests();
+        engine.startGame();
+        Enemy enemy = Enemy.charmFairy(220, 180, 0, 0);
+        engine.addEnemy(enemy);
+
+        engine.useBombForTests();
+        engine.updateForTests(1.0);
+
+        assert engine.getEnemyCount() == 0 : "spell sweep should not skip enemies between wide frame steps";
     }
 
     private static void testSpellSweepDamagesBoss() {
@@ -154,17 +703,155 @@ public final class LogicSmokeTest {
 
         assert engine.getBoss().getHp() < hpBefore : "spell sweep should damage boss when it crosses the beam";
     }
+
+    private static double normalizeAngle(double angle) {
+        while (angle <= -Math.PI) {
+            angle += Math.PI * 2.0;
+        }
+        while (angle > Math.PI) {
+            angle -= Math.PI * 2.0;
+        }
+        return angle;
+    }
+
+    private static void advanceStageTo(GameEngine engine, double targetStageTime) {
+        double delta = targetStageTime - engine.getStageTime() + 0.05;
+        if (delta > 0) {
+            engine.updateForTests(delta);
+        }
+    }
+
+    private static void defeatActiveBoss(GameEngine engine) {
+        Boss boss = engine.getBoss();
+        assert boss != null && engine.isBossActive() : "an active boss is required";
+        boss.skipToFinalPhaseForTests(engine);
+        boss.takeDamage(boss.getHp());
+        engine.updateForTests(1.0 / 60.0);
+    }
+
+    private static void clearMiniBossOne(GameEngine engine) {
+        advanceStageTo(engine, StageDirector.MINI_BOSS_ONE_TIME);
+        assert "mini_boss_one_intro".equals(engine.getDialogueSceneIdForTests()) : "first small boss intro should start";
+        finishDialogue(engine);
+        assert engine.getBoss().getEncounter() == Boss.Encounter.MINI_BOSS_ONE : "first small boss should spawn";
+        defeatActiveBoss(engine);
+        assert "mini_boss_one_defeated".equals(engine.getDialogueSceneIdForTests()) : "first small boss defeat dialogue";
+        finishDialogue(engine);
+    }
+
+    private static void clearMiniBossTwo(GameEngine engine) {
+        advanceStageTo(engine, StageDirector.MINI_BOSS_TWO_TIME);
+        assert "mini_boss_two_intro".equals(engine.getDialogueSceneIdForTests()) : "second small boss intro should start";
+        finishDialogue(engine);
+        assert engine.getBoss().getEncounter() == Boss.Encounter.MINI_BOSS_TWO : "second small boss should spawn";
+        defeatActiveBoss(engine);
+        assert "mini_boss_two_defeated".equals(engine.getDialogueSceneIdForTests()) : "second small boss defeat dialogue";
+        finishDialogue(engine);
+    }
+
+    private static void reachFinalBossIntro(GameEngine engine) {
+        clearMiniBossOne(engine);
+        clearMiniBossTwo(engine);
+        advanceStageTo(engine, StageDirector.FINAL_BOSS_TIME);
+        assert "final_boss_intro".equals(engine.getDialogueSceneIdForTests()) : "final boss intro should start";
+    }
+
+    private static void finishDialogue(GameEngine engine) {
+        int guard = 80;
+        while (engine.isDialogueActiveForTests() && guard-- > 0) {
+            engine.advanceDialogueForTests();
+        }
+        assert guard > 0 : "dialogue should finish within a bounded number of advances";
+    }
+
+    private static void advanceDialogueUntilMusicCue(GameEngine engine, String cue) {
+        int guard = 80;
+        while (engine.isDialogueActiveForTests() && !cue.equals(engine.getCurrentMusicCueForTests()) && guard-- > 0) {
+            engine.advanceDialogueForTests();
+        }
+        assert cue.equals(engine.getCurrentMusicCueForTests()) : "dialogue should trigger music cue " + cue;
+    }
+
+    private static void testItemIconAssetsExistAndMapToTypes() throws Exception {
+        for (moonlit.model.ItemDrop.Type type : moonlit.model.ItemDrop.Type.values()) {
+            Path path = Path.of(moonlit.model.ItemDrop.iconPathForType(type));
+            assert Files.exists(path) : "item icon missing: " + path;
+            try (java.io.InputStream stream = Files.newInputStream(path)) {
+                java.awt.image.BufferedImage image = javax.imageio.ImageIO.read(stream);
+                assert image != null : "item icon should be readable: " + path;
+                assert image.getColorModel().hasAlpha() : "item icon should have transparent alpha: " + path;
+            }
+        }
+    }
+
+    private static void testResourceFragmentsExposeHudCounts() {
+        GameEngine engine = GameEngine.createForTests();
+        engine.startGame();
+        int bombsBefore = engine.getPlayer().getBombs();
+        int livesBefore = engine.getPlayer().getLives();
+
+        engine.collectItem(new moonlit.model.ItemDrop(moonlit.model.ItemDrop.Type.BOMB_FRAGMENT, 120, 120));
+        engine.collectItem(new moonlit.model.ItemDrop(moonlit.model.ItemDrop.Type.BOMB_FRAGMENT, 120, 120));
+        assert engine.getBombFragments() == 2 : "two bomb fragments should be visible to the HUD";
+        engine.collectItem(new moonlit.model.ItemDrop(moonlit.model.ItemDrop.Type.BOMB_FRAGMENT, 120, 120));
+        assert engine.getBombFragments() == 0 : "third bomb fragment should reset the fragment counter";
+        assert engine.getPlayer().getBombs() == bombsBefore + 1 : "third bomb fragment should add one bomb";
+
+        engine.collectItem(new moonlit.model.ItemDrop(moonlit.model.ItemDrop.Type.LIFE_FRAGMENT, 120, 120));
+        engine.collectItem(new moonlit.model.ItemDrop(moonlit.model.ItemDrop.Type.LIFE_FRAGMENT, 120, 120));
+        assert engine.getLifeFragments() == 2 : "two life fragments should be visible to the HUD";
+        engine.collectItem(new moonlit.model.ItemDrop(moonlit.model.ItemDrop.Type.LIFE_FRAGMENT, 120, 120));
+        assert engine.getLifeFragments() == 0 : "third life fragment should reset the fragment counter";
+        assert engine.getPlayer().getLives() == livesBefore + 1 : "third life fragment should add one life";
+    }
+    private static void testMonsterSpritesheetsExist() {
+        for (int i = 1; i <= 8; i++) {
+            Path path = Path.of("assets/sprites/monster" + i + ".png");
+            assert Files.exists(path) : "monster" + i + " spritesheet missing";
+            assert SpriteAnimation.isFrameCompatible(path, 46) : "monster" + i + " frames invalid";
+        }
+    }
+
+    private static void testEnemiesUseRandomMonsterVisuals() {
+        Set<String> paths = new HashSet<>();
+        for (int i = 0; i < 16; i++) {
+            paths.add(Enemy.lantern(120, 120, 0, 0).getVisualSpritePath());
+        }
+        assert paths.size() > 1 : "enemy visuals should be randomized across monster sprites";
+        for (String path : paths) {
+            assert path.startsWith("assets/sprites/monster") : "enemy should use imported monster sprites";
+        }
+    }
+    private static void testBothStagesSpawnMonsterVisualEnemies() {
+        GameEngine stageOne = GameEngine.createForTestsWithStageScript();
+        stageOne.startGame();
+        stageOne.updateForTests(6.0);
+        assert stageOne.getEnemies().stream()
+                .allMatch(enemy -> enemy.getVisualSpritePath().startsWith("assets/sprites/monster"))
+                : "stage one enemies should use imported monster sprites";
+
+        GameEngine stageTwo = GameEngine.createForTestsWithStageScript();
+        stageTwo.startStageTwoForTests();
+        stageTwo.updateForTests(7.0);
+        assert stageTwo.getEnemies().stream()
+                .allMatch(enemy -> enemy.getVisualSpritePath().startsWith("assets/sprites/monster"))
+                : "stage two enemies should use imported monster sprites";
+    }
     private static void testRequiredAssetsExist() {
         assert Files.exists(Path.of("assets/sprites/player_flight.png")) : "player flight spritesheet missing";
-        assert Files.exists(Path.of("assets/sprites/player_focus.png")) : "player focus spritesheet missing";
         assert Files.exists(Path.of("assets/sprites/player_card.png")) : "player spell card spritesheet missing";
         assert Files.exists(Path.of("assets/sprites/enemy_lantern.png")) : "lantern enemy spritesheet missing";
         assert Files.exists(Path.of("assets/sprites/enemy_charm_fairy.png")) : "charm fairy spritesheet missing";
-        assert Files.exists(Path.of("assets/sprites/boss_moon_spirit.png")) : "boss spritesheet missing";
+        assert Files.exists(Path.of("assets/sprites/boss_normal.png")) : "boss normal spritesheet missing";
+        assert Files.exists(Path.of("assets/sprites/boss_abnormal.png")) : "boss abnormal spritesheet missing";
         assert Files.exists(Path.of("assets/backgrounds/stage1_moonlit_shrine.png")) : "stage background missing";
         assert SpriteAnimation.isFrameCompatible(Path.of("assets/sprites/player_flight.png"), 61) : "player frames invalid";
         assert SpriteAnimation.isFrameCompatible(Path.of("assets/sprites/player_card.png"), 61) : "player spell card frames invalid";
-        assert SpriteAnimation.isFrameCompatible(Path.of("assets/sprites/boss_moon_spirit.png"), 6) : "boss frames invalid";
+        assert SpriteAnimation.isFrameCompatible(Path.of("assets/sprites/boss_normal.png"), 46) : "boss normal frames invalid";
+        assert SpriteAnimation.isFrameCompatible(Path.of("assets/sprites/boss_abnormal.png"), 46) : "boss abnormal frames invalid";
     }
 }
+
+
+
 

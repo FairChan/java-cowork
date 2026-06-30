@@ -34,7 +34,7 @@ Get-ChildItem -Path (Join-Path $projectRoot "src") -Recurse -Filter "*.java" |
     ForEach-Object { $_.FullName } |
     Set-Content -Path $sourceList -Encoding ASCII
 
-javac --module-path $sdkLib --add-modules javafx.controls -encoding UTF-8 -d $classesDir "@$sourceList"
+javac --module-path $sdkLib --add-modules javafx.controls,javafx.media -encoding UTF-8 -d $classesDir "@$sourceList"
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
@@ -43,7 +43,7 @@ Get-ChildItem -Path (Join-Path $projectRoot "test") -Recurse -Filter "*.java" |
     ForEach-Object { $_.FullName } |
     Set-Content -Path $testList -Encoding ASCII
 
-javac --module-path $sdkLib --add-modules javafx.controls -encoding UTF-8 -cp $classesDir -d $testDir "@$testList"
+javac --module-path $sdkLib --add-modules javafx.controls,javafx.media -encoding UTF-8 -cp $classesDir -d $testDir "@$testList"
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }

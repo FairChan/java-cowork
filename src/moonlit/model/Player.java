@@ -24,8 +24,6 @@ public class Player extends Entity {
     private boolean focused;
     private final SpriteAnimation flightAnimation =
             new SpriteAnimation("assets/sprites/player_flight.png", 93, 96, 61, 1.0 / 24.0);
-    private final SpriteAnimation focusAnimation =
-            new SpriteAnimation("assets/sprites/player_focus.png", 64, 64, 4, 0.12);
     private final SpriteAnimation cardAnimation =
             new SpriteAnimation("assets/sprites/player_card.png", 98, 96, 61, 1.0 / 24.0);
 
@@ -38,7 +36,6 @@ public class Player extends Entity {
         InputController input = engine.getInput();
         focused = input.isFocusHeld();
         flightAnimation.update(deltaSeconds);
-        focusAnimation.update(deltaSeconds);
         cardAnimation.update(deltaSeconds);
         spellCardSeconds = Math.max(0, spellCardSeconds - deltaSeconds);
 
@@ -69,11 +66,9 @@ public class Player extends Entity {
         double alpha = invulnerableSeconds > 0 && ((int) (invulnerableSeconds * 14) % 2 == 0) ? 0.42 : 1.0;
         graphics.setGlobalAlpha(alpha);
 
-        SpriteAnimation activeAnimation = isSpellCardActive()
-                ? cardAnimation
-                : focused ? focusAnimation : flightAnimation;
+        SpriteAnimation activeAnimation = isSpellCardActive() ? cardAnimation : flightAnimation;
         if (activeAnimation.isAvailable()) {
-            double scale = isSpellCardActive() ? 0.76 : (focused ? 1.0 : 0.72);
+            double scale = isSpellCardActive() ? 0.76 : 0.72;
             AnimatedSpriteRenderer.drawCentered(graphics, activeAnimation, x, y, scale);
             renderFocusMarker(graphics);
             graphics.setGlobalAlpha(1.0);
@@ -139,8 +134,21 @@ public class Player extends Entity {
         return bombs;
     }
 
+
+    public void addBomb() {
+        bombs = Math.min(8, bombs + 1);
+    }
+
+    public void addLife() {
+        lives = Math.min(8, lives + 1);
+    }
     public boolean isFocused() {
         return focused;
+    }
+
+    public void push(double dx, double dy) {
+        x = clamp(x + dx, GameConfig.PLAYFIELD_X + 18, GameConfig.PLAYFIELD_RIGHT - 18);
+        y = clamp(y + dy, GameConfig.PLAYFIELD_Y + 32, GameConfig.PLAYFIELD_BOTTOM - 18);
     }
 
     public void setInvulnerableSeconds(double invulnerableSeconds) {
@@ -155,10 +163,18 @@ public class Player extends Entity {
         if (!focused) {
             return;
         }
-        graphics.setStroke(Color.web("#b9f8ff"));
-        graphics.setLineWidth(1.5);
-        graphics.strokeOval(x - 11, y - 11, 22, 22);
-        graphics.setFill(Color.web("#ffffff"));
-        graphics.fillOval(x - 3, y - 3, 6, 6);
+        double oldAlpha = graphics.getGlobalAlpha();
+        graphics.setGlobalAlpha(0.38);
+        graphics.setFill(Color.web("#ff1744"));
+        graphics.fillOval(x - 9, y - 9, 18, 18);
+        graphics.setGlobalAlpha(0.95);
+        graphics.setFill(Color.web("#ff002b"));
+        graphics.fillOval(x - 4, y - 4, 8, 8);
+        graphics.setGlobalAlpha(1.0);
+        graphics.setStroke(Color.web("#ffffff", 0.82));
+        graphics.setLineWidth(1.0);
+        graphics.strokeOval(x - 4, y - 4, 8, 8);
+        graphics.setGlobalAlpha(oldAlpha);
     }
 }
+

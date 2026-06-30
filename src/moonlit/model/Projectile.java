@@ -25,4 +25,16 @@ public abstract class Projectile extends GameObject {
             alive = false;
         }
     }
+
+    public double getVelocityX() {
+        return velocityX;
+    }
+
+    public double getVelocityY() {
+        return velocityY;
+    }
+
+    public double getSpeed() {
+        return Math.hypot(velocityX, velocityY);
+    }
 }

@@ -56,6 +56,7 @@ def options_from_payload(payload: dict[str, Any]) -> tuple[ProcessingOptions, in
         output_fps=parse_int(payload, "fps", 12, 1, 240),
         palette_colors=parse_int(payload, "paletteColors", 48, 0, 256),
         crop_padding=parse_int(payload, "cropPadding", 8, 0, 256),
+        forward_frame_count=parse_int(payload, "forwardFrames", 0, 0, 10000),
         hue_min=parse_int(payload, "hueMin", 45, 0, 179),
         hue_max=parse_int(payload, "hueMax", 85, 0, 179),
         saturation_min=parse_int(payload, "saturationMin", 60, 0, 255),

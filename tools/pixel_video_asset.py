@@ -27,6 +27,7 @@ class ProcessingOptions:
     output_fps: int = 12
     palette_colors: int = 48
     crop_padding: int = 8
+    forward_frame_count: int = 0
     hue_min: int = 45
     hue_max: int = 85
     saturation_min: int = 60
@@ -63,13 +64,30 @@ def read_video_frames(video_path: Path) -> tuple[list[np.ndarray], float]:
     return frames, source_fps
 
 
-def select_frames(frames: list[np.ndarray], source_fps: float, output_fps: int) -> list[np.ndarray]:
-    return [frames[index] for index in select_frame_indices(len(frames), source_fps, output_fps)]
+def select_frames(
+    frames: list[np.ndarray],
+    source_fps: float,
+    output_fps: int,
+    forward_frame_count: int = 0,
+) -> list[np.ndarray]:
+    return [frames[index] for index in select_frame_indices(len(frames), source_fps, output_fps, forward_frame_count)]
 
 
-def select_frame_indices(frame_count: int, source_fps: float, output_fps: int) -> list[int]:
+def select_frame_indices(
+    frame_count: int,
+    source_fps: float,
+    output_fps: int,
+    forward_frame_count: int = 0,
+) -> list[int]:
+    if frame_count <= 0:
+        return []
     if output_fps <= 0:
         raise ValueError("--fps must be greater than 0")
+    if forward_frame_count > 0:
+        count = min(frame_count, forward_frame_count)
+        if count == 1:
+            return [0]
+        return [int(round(index * (frame_count - 1) / (count - 1))) for index in range(count)]
     if output_fps >= source_fps:
         return list(range(frame_count))
 
@@ -80,6 +98,12 @@ def select_frame_indices(frame_count: int, source_fps: float, output_fps: int) -
         selected.append(int(round(index)))
         index += step
     return selected
+
+
+def make_ping_pong_indices(forward_indices: list[int]) -> list[int]:
+    if len(forward_indices) <= 2:
+        return list(forward_indices)
+    return list(forward_indices) + list(reversed(forward_indices[1:-1]))
 
 
 def extract_subject_rgba(frame_rgb: np.ndarray, options: ProcessingOptions) -> tuple[Image.Image, tuple[int, int, int, int]]:
@@ -150,14 +174,20 @@ def process_rgb_frames(frames: Iterable[np.ndarray], source_fps: float, options:
         raise ValueError("No frames selected for processing")
 
     extracted = [extract_subject_rgba(frame, options) for frame in source_frames]
-    selected_indices = select_frame_indices(len(source_frames), source_fps, options.output_fps)
-    if not selected_indices:
+    forward_indices = select_frame_indices(
+        len(source_frames),
+        source_fps,
+        options.output_fps,
+        options.forward_frame_count,
+    )
+    loop_indices = make_ping_pong_indices(forward_indices)
+    if not loop_indices:
         raise ValueError("No frames selected for processing")
 
     crop = union_bbox([bbox for _, bbox in extracted], source_frames[0].shape, options.crop_padding)
     processed_frames = [
         pixelize_rgba(rgba.crop(crop), options.target_frame_height, options.palette_colors)
-        for rgba, _ in (extracted[index] for index in selected_indices)
+        for rgba, _ in (extracted[index] for index in loop_indices)
     ]
 
     frame_width, frame_height = processed_frames[0].size
@@ -165,6 +195,10 @@ def process_rgb_frames(frames: Iterable[np.ndarray], source_fps: float, options:
         "source_fps": int(source_fps) if float(source_fps).is_integer() else source_fps,
         "output_fps": options.output_fps,
         "frame_count": len(processed_frames),
+        "forward_frame_count": len(forward_indices),
+        "requested_forward_frame_count": options.forward_frame_count,
+        "loop_mode": "pingpong_no_duplicate_endpoints",
+        "loop_frame_indices": loop_indices,
         "frame_size": {"width": frame_width, "height": frame_height},
         "source_crop": {
             "x": crop[0],
@@ -257,6 +291,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--frame-height", type=int, default=96, help="Target pixel-art frame height. Default: 96.")
     parser.add_argument("--fps", type=int, default=12, help="Output frame rate used for frame sampling. Default: 12.")
     parser.add_argument("--palette-colors", type=int, default=48, help="Quantize RGB colors to this count. Use 0 to disable.")
+    parser.add_argument(
+        "--forward-frames",
+        "--frame-count",
+        dest="forward_frames",
+        type=int,
+        default=0,
+        help="Frames sampled for the forward pass. Lower values play faster. Default: 0 uses FPS sampling.",
+    )
     parser.add_argument("--preview-scale", type=int, default=4, help="Nearest-neighbor preview scale. Default: 4.")
     parser.add_argument("--crop-padding", type=int, default=8, help="Padding around the union subject crop. Default: 8.")
     parser.add_argument("--keep-all-components", action="store_true", help="Keep disconnected foreground components.")
@@ -274,6 +316,7 @@ def main(argv: list[str] | None = None) -> int:
         output_fps=args.fps,
         palette_colors=args.palette_colors,
         crop_padding=args.crop_padding,
+        forward_frame_count=args.forward_frames,
         hue_min=args.hue_min,
         hue_max=args.hue_max,
         saturation_min=args.saturation_min,
