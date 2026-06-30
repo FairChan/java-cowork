@@ -1,18 +1,27 @@
-# Starry Illusion JavaFX Danmaku
+# Starry Illusion / 穿梭于星屑的魔法使
 
-`Starry Illusion / 穿梭于星屑的魔法使` is the formal version of the JavaFX bullet-hell course demo. It keeps the existing Canvas, `AnimationTimer`, 60 FPS frame coroutine tools, imported sprite sheets, additive glowing bullets, decelerating projectile infrastructure, portrait dialogue scenes, and the full stage timeline with a six-phase Marisa boss battle.
+## English
 
-The game is inspired by Touhou-style danmaku structure and by Sparen's Danmaku Design Studio ideas such as Bullet, Group, Subpattern, Pattern, odd-way aimed shots, rings, stacks, and speed-changing bullets. Code, stage scripting, and classroom demo assets in this repository are original project work.
+**Starry Illusion** is a JavaFX bullet-hell shooting game demo built for a course presentation. The game uses Java 21, JavaFX Canvas, `AnimationTimer`, object-oriented class design, animated sprites, scrolling backgrounds, item drops, dialogue scenes, boss phases, lasers, and a 60 FPS frame-based bullet pattern system.
 
-## How to Run
+The project is inspired by classic danmaku stage structure, but all code and gameplay implementation in this repository are written for this demo.
 
-Requirements:
+### Features
+
+- Playable danmaku stage with waves, mini-bosses, and a final boss route.
+- 1176x700 JavaFX game window with title screen, HUD panels, menu, pause, win, and lose states.
+- Player shooting, focus movement, small hitbox marker, graze, bombs, lives, score, power, and invincible demo mode.
+- Item system: small power, big power, score items, clear items, bomb fragments, life fragments, and full life drops.
+- Boss phase system with spell-card-like patterns, warning lasers, bouncing bullets, glowing bullets, and Master Spark-style beam pressure.
+- Optional BGM loading from `assets/audio/`; the game still runs silently if audio files are missing.
+
+### Requirements
 
 - Windows PowerShell
-- JDK 21 with `java` and `javac` on PATH
-- Internet access on first compile, so `compile.ps1` can download OpenJFX 21.0.8 into `.deps/`
+- JDK 21 with `java` and `javac` on `PATH`
+- Internet access on first compile so `compile.ps1` can download OpenJFX into `.deps/`
 
-Commands:
+### Run
 
 ```powershell
 .\compile.ps1
@@ -20,131 +29,89 @@ Commands:
 .\run.ps1
 ```
 
-The scripts compile with `javafx.controls` and `javafx.media`. The current demo includes local course-demo BGM under `assets/audio/`; if those files are removed, the game falls back to silence.
+### Controls
 
-Local BGM paths:
+| Action | Key |
+| --- | --- |
+| Move | Arrow keys / WASD |
+| Shoot | Z |
+| Bomb / Dream Seal | X |
+| Focus / slow movement | Shift |
+| Pause | P |
+| Invincible demo mode | I |
+| Start / confirm / retry | Enter |
+| Advance dialogue | Z / Enter |
 
-- `assets/audio/stage_starry_illusion.mp3`
-- `assets/audio/boss_master_spark.mp3`
+### Project Structure
 
-## Controls
+- `src/moonlit/engine` - game loop, state, input, collision, and configuration.
+- `src/moonlit/model` - player, enemies, boss, bullets, lasers, and item drops.
+- `src/moonlit/stage` - stage director, timeline, waves, and boss activation.
+- `src/moonlit/render` - HUD, title screen, particles, sprites, and background rendering.
+- `src/moonlit/dialogue` - dialogue data, controller, and renderer.
+- `src/moonlit/pattern` - frame coroutine tools and reusable bullet patterns.
+- `assets/` - sprites, backgrounds, portraits, item icons, title images, and optional audio.
+- `test/` - smoke tests for core game logic and resources.
 
-- Move: Arrow keys or WASD
-- Shoot: `Z`
-- Dream Seal spell bomb: `X`
-- Focus / slow movement: `Shift` (adds a red hitbox dot over the normal Reimu animation)
-- Pause: `P`
-- Invincible demo mode: `I` toggles invincibility on/off. When ON, bullets and lasers no longer remove lives, but movement, shooting, graze, item pickup, laser push, and scoring still work.
-- Start / retry: `Enter`
-- Advance dialogue: `Z` or `Enter`
-- Auxiliary Stage 2 test: `2` from the menu
+### Asset Notes
 
-## Cowork UI And Title Screen
+Some images and music are local course-demo assets provided for this project. Item icons are based on Game-icons.net resources licensed under CC BY 3.0. If the project is published beyond classroom use, confirm the rights for all provided images and audio.
 
-The game now uses the cowork `1176x700` dual-panel layout: a left player/score portrait panel, the original `620x652` playfield in the middle, and a right stage/progress/resource panel. The title screen is a JavaFX Canvas rewrite of the cowork `DanmakuFestivalCover` demo, with a shrine gate background, Reimu/Marisa title poses, petals, menu highlighting, and a short START camera push before Stage 1 begins.
+---
 
-Title menu controls:
+## 中文
 
-- Select: `Up` / `Down` or mouse hover
-- Confirm: `Enter`, `Z`, or mouse click
-- START: plays the shrine transition and begins `Starry Illusion`
-- EXIT: requests application shutdown
-- Other entries: show a temporary coming-soon message
+**穿梭于星屑的魔法使 / Starry Illusion** 是一个用于课程展示的 JavaFX 弹幕射击游戏 Demo。项目使用 Java 21、JavaFX Canvas、`AnimationTimer`、面向对象类结构、精灵动画、滚动背景、道具掉落、剧情对话、Boss 阶段、激光判定，以及 60 FPS 帧同步弹幕脚本系统。
 
-## Formal Stage: Starry Illusion
+本项目参考经典弹幕射击游戏的关卡结构与弹幕设计思路，但仓库中的代码和玩法实现均为本 Demo 编写。
 
-Current route after the `MoonlitGame` folder merge: Stage 1 now uses a three-boss structure. `Kitsune Envoy` appears around `00:34`, `Lantern Butterfly` appears around `01:22`, and `Star Oracle` appears around `02:12` as the final six-phase boss. The older single-midboss wording below is kept only as historical design context.
+### 主要功能
 
-Stage 1 is now the main entry. Its background uses four seamless vertical images that scroll continuously to simulate high-speed flight. Existing star motion remains layered over the art, and cloud fog covers each major wave transition. The final boss slows the fourth background and adds the existing cosmic magic-circle mood.
+- 可游玩的完整弹幕关卡，包含道中波次、小 Boss 和关底 Boss。
+- 1176x700 JavaFX 窗口，包含开始界面、HUD、菜单、暂停、胜利和失败状态。
+- 玩家射击、低速聚焦、小判定点显示、擦弹、Bomb、生命、分数、火力和无敌演示模式。
+- 道具系统：小 P、大 P、蓝色得分点、绿色清弹点、B 雷碎片、残机碎片和完整残机。
+- Boss 阶段系统：符卡风格弹幕、预警激光、反弹子弹、加算发光子弹和 Master Spark 风格大激光。
+- 可选 BGM：音频放在 `assets/audio/` 中；如果音频缺失，游戏会静默运行。
 
-Timeline:
+### 运行环境
 
-1. `00:00 - 00:25` Fairy probe over `starry_wave1`: U-shaped fairy entries, short hover, odd aimed shots.
-2. `00:25 - 00:50` Kedama lock over `starry_wave2`: fast Z-shaped side sweeps that leave bullet walls.
-3. `00:50 - 01:20` Greater fairies over `starry_wave3`: heavy 16-way rings plus random downward shots.
-4. `01:20 - 01:55` Midboss Meteoric Shower over `starry_wave3`: a portrait dialogue encounter pauses the stage, then falling star bullets begin with acceleration variety.
-5. `01:55 - 02:50` Sunflower rage over `starry_wave4`: laser warnings, active lasers, and slow oval pressure.
-6. `02:50+` Final Marisa boss battle: pre-boss dialogue cuts into the boss BGM before battle starts.
+- Windows PowerShell
+- JDK 21，并确保 `java` 和 `javac` 已加入 `PATH`
+- 首次编译需要网络，用于让 `compile.ps1` 下载 OpenJFX 到 `.deps/`
 
-Resource drops include small power, big power, blue score items, green bullet-clear items, bomb fragments, life fragments, and full life drops. Items auto-attract near the top of the playfield or near the player.
-
-Story scenes use `assets/portraits/reimu.png` and `assets/portraits/marisa.png` in a Touhou-style dialogue box. Gameplay objects freeze during dialogue while the background, music, and particles keep moving. The post-battle dialogue appears before `STAGE CLEAR`.
-
-## Boss Battle
-
-`Boss` now supports multiple `Encounter` identities from the cowork folder: `Kitsune Envoy`, `Lantern Butterfly`, `Star Oracle`, and the auxiliary Stage 2 test boss. Mini-bosses use shorter two-phase fights and portrait art; the final `Star Oracle` encounter keeps the formal six-phase `BossPhase` queue.
-
-The formal boss uses `BossPhase` records instead of the old three-threshold HP switch. Each phase has a name, HP, time limit, movement behavior, pattern object, and reward handling.
-
-Boss phases:
-
-1. `Nonspell 1: High-Mobility Stardust` - figure-eight movement and three red/blue decelerating rings.
-2. `Spell 1: Stardust Reverie` - twin magic emitters fire bouncing stars that split on wall reflection, with periodic aimed lasers.
-3. `Nonspell 2: Light and Heat` - teleporting side pressure, red warning-line lasers, and yellow noise bullets.
-4. `Spell 2: Non-Directional Laser` - six rotating laser emitters plus dense sine-like star waves.
-5. `Nonspell 3: Magic Circle Storm` - random magic-circle bursts across the screen.
-6. `Final Spell: Final Master Spark` - delayed tracking, a wide vertical Master Spark laser with push force, and crossing side star streams.
-
-The older `XOddAimedPattern` remains as an auxiliary Danmakufu-style script test: 4 diagonal arms times 9-way odd spread, frame-wait timing, additive blending, and negative acceleration.
-
-## OOP Class Design
-
-- `GameApplication`: JavaFX entry point, window, scene, canvas, and loop.
-- `GameEngine`: central game-state manager for objects, resources, update order, rendering order, win/loss, and Dream Seal sweep.
-- `GameState`: menu, play, dialogue, pause, win, and loss states.
-- `GameObject`: abstract base for updatable/renderable objects.
-- `Entity`: HP-bearing base class for player, enemies, and boss.
-- `Player`: movement, focus, shooting, bombs, lives, invulnerability, hitbox marker, and spell animation.
-- `Enemy`: polymorphic enemy kinds and movement styles for fairy, kedama, greater fairy, and sunflower waves.
-- `Boss` and `BossPhase`: six-phase boss queue, phase movement, timeouts, and pattern switching.
-- `Projectile`, `PlayerShot`, `EnemyBullet`, `BouncingEnemyBullet`: polymorphic projectile behavior.
-- `BulletPattern`: strategy interface for boss attacks, including frame-coroutine patterns.
-- `StageDirector`, `LevelManager`, `StageScript`, `EnemyWave`: formal stage timeline and auxiliary stage scripting.
-- `Laser`: warning/active beam object with width, duration, collision, and push force.
-- `ItemDrop`: collectible resources with attraction and scoring effects.
-- `AudioManager`: optional local BGM playback with missing-file no-op behavior and dialogue-triggered cue changes.
-- `DialogueScene`, `DialogueLine`, `DialogueController`, `DialogueRenderer`: story scripting, portrait dialogue state, and Canvas dialogue UI.
-- `AssetLoader`, `SpriteAnimation`, `AnimatedSpriteRenderer`: PNG sprite loading and animation.
-- `FrameTaskScheduler`, `FrameCoroutine`: lightweight 60 FPS `waitFrames`-style coroutine layer.
-- `CollisionSystem`, `HudRenderer`, `ParticleSystem`, `StarfieldBackground`: separated collision, UI, effects, and background components.
-- `TitleScreenRenderer`: cowork-inspired title menu, character art, petals, and START transition.
-
-## Asset Notes
-
-Current animation sheets were imported from local frame folders and are already wired into gameplay:
-
-- `assets/sprites/player_flight.png` from `output/pixel_assets/reimu/frames`
-- `assets/sprites/player_card.png` from `output/pixel_assets/reimu-card/frames`
-- `assets/sprites/boss_normal.png` from `output/pixel_assets/boss_normal/frames`
-- `assets/sprites/boss_abnormal.png` from `output/pixel_assets/boss_abnormal/frames`
-- `assets/sprites/monster1.png` through `assets/sprites/monster8.png` from `output/pixel_assets/monster*/frames`
-- `assets/backgrounds/starry_wave1.png` through `assets/backgrounds/starry_wave4.png` from `output/background1.png` through `output/background4.png`
-- `assets/audio/stage_starry_illusion.mp3` and `assets/audio/boss_master_spark.mp3` from the user-provided local MP3 files
-- `assets/portraits/reimu.png` and `assets/portraits/marisa.png` from `output/reimu.png` and `output/boss.png`
-- `assets/portraits/reimu_normal.png`, `reimu_hurt.png`, and `reimu_cheer.png` from the cowork UI for the left HUD mood portrait
-- `assets/bosses/boss_kitsune.png`, `boss_lantern_fairy.png`, and `boss_star_oracle.png` from the cowork `MoonlitGame` folder for mini-boss/final-boss portraits
-- `assets/title/*` from the cowork cover demo for the JavaFX title screen
-- `assets/items/*.png` are recolored transparent PNG icons based on Game-icons.net assets: `power-lightning`, `crystal-bars`, `emerald`, `soul`, and `glass-heart`. Game-icons.net assets are licensed under CC BY 3.0; attribution: https://game-icons.net/
-
-Enemies randomly select one of the eight monster sprite sheets while keeping their gameplay behavior. Same-wave enemies now receive deterministic randomized bullet profiles for color, count, speed, spacing, and spawn jitter, so the demo stays reproducible without looking identical every time.
-
-## Verification
-
-Primary checks:
+### 运行方式
 
 ```powershell
-.\run-tests.ps1
 .\compile.ps1
+.\run-tests.ps1
 .\run.ps1
 ```
 
-`LogicSmokeTest` covers the cowork title screen flow, wide HUD layout, portrait mood states, default stage selection, dialogue gates, portrait assets, timeline milestones, six boss phases, Master Spark laser push, bullet-clear item conversion, collision, bombs, Stage 2 frame script behavior, sprite sheet compatibility, and Dream Seal sweep behavior.
+### 操作说明
 
-## Presentation Path
+| 操作 | 按键 |
+| --- | --- |
+| 移动 | 方向键 / WASD |
+| 射击 | Z |
+| Bomb / 梦想封印 | X |
+| 低速聚焦 | Shift |
+| 暂停 | P |
+| 无敌演示模式 | I |
+| 开始 / 确认 / 重开 | Enter |
+| 推进对话 | Z / Enter |
 
-1. Introduce `Starry Illusion` and the objective.
-2. Show the cowork title screen, dual HUD, controls, focus hitbox, shooting, graze, Dream Seal, and item drops.
-3. Demonstrate the five stage timeline sections and the midboss/final boss dialogue gates.
-4. Explain the six-phase boss queue and show Master Spark.
-5. Open class design: inheritance, polymorphism, encapsulation, and separate renderer/logic systems.
-6. Run `run-tests.ps1` to demonstrate verification.
+### 项目结构
+
+- `src/moonlit/engine` - 游戏循环、状态、输入、碰撞和配置。
+- `src/moonlit/model` - 玩家、敌人、Boss、子弹、激光和道具。
+- `src/moonlit/stage` - 关卡导演、时间轴、波次和 Boss 触发。
+- `src/moonlit/render` - HUD、开始界面、粒子、精灵和背景绘制。
+- `src/moonlit/dialogue` - 对话数据、控制器和渲染器。
+- `src/moonlit/pattern` - 帧协程工具和可复用弹幕脚本。
+- `assets/` - 精灵、背景、立绘、道具图标、标题图和可选音频。
+- `test/` - 核心逻辑与资源烟雾测试。
+
+### 资源说明
+
+部分图片和音乐为课程 Demo 本地资源。道具图标基于 Game-icons.net 的 CC BY 3.0 资源制作。如果项目用于课堂以外的公开发布，请再次确认所有图片与音频的授权。
