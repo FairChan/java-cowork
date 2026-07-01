@@ -4,3 +4,4 @@ output/
 __pycache__/
 *.pyc
 tmp/pixel_video_asset_ui/
+tmp/
